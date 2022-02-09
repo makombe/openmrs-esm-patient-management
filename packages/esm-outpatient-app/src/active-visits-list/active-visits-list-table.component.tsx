@@ -18,14 +18,29 @@ import {
   Tile,
   OverflowMenu,
   OverflowMenuItem,
+  Search,
+  SearchProps,
+  InlineLoading,
 } from 'carbon-components-react';
 import { useLayoutType, useConfig, ConfigurableLink } from '@openmrs/esm-framework';
 import { useTranslation } from 'react-i18next';
 import styles from './active-visits-list-table.scss';
 import { ActiveVisit, useActiveVisits } from '../patient-queue-metrics/queue-metrics.resource';
 import Add16 from '@carbon/icons-react/es/add/16';
+import debounce from 'lodash-es/debounce';
 
-const ActiveVisitsListTable: React.FC = () => {
+interface ActiveVisitsListTableProps {
+  isLoading?: boolean;
+  isFetching?: boolean;
+  search?: {
+    onSearch(searchTerm: string): any;
+    placeHolder: string;
+    currentSearchTerm?: string;
+    otherSearchProps?: SearchProps;
+  };
+}
+
+const ActiveVisitsListTable: React.FC<ActiveVisitsListTableProps> = ({ isFetching, search }) => {
   const { t } = useTranslation();
   const layout = useLayoutType();
   const { data: activeVisits, isError, isLoading, isValidating } = useActiveVisits();
@@ -57,6 +72,9 @@ const ActiveVisitsListTable: React.FC = () => {
     [t],
   );
 
+  const handleSearch = useMemo(() => debounce((searchTerm) => search.onSearch(searchTerm), 300), []);
+  // const otherSearchProps = useMemo(() => search.otherSearchProps || {}, [search]);
+
   if (isLoading) {
     return <DataTableSkeleton role="progressbar" />;
   }
@@ -79,6 +97,23 @@ const ActiveVisitsListTable: React.FC = () => {
             iconDescription={t('addPatientList', 'Add patient to list')}>
             {t('addPatientList', 'Add patient to list')}
           </Button>
+        </div>
+
+        <div id="queue-visit-table-tool-bar" className={styles.searchContainer}>
+          <div>{isFetching && <InlineLoading />}</div>
+          <div>
+            <Search
+              id="patient-list-search"
+              placeholder="search this list"
+              labelText=""
+              size={desktopView ? 'sm' : 'xl'}
+              className={styles.searchOverrides}
+              light
+              onChange={(evnt) => handleSearch(evnt.target.value)}
+              defaultValue=""
+              // {...otherSearchProps}
+            />
+          </div>
         </div>
         <DataTable rows={activeVisits} headers={headerData} isSortable>
           {({ rows, headers, getHeaderProps, getTableProps, getBatchActionProps, getRowProps }) => (

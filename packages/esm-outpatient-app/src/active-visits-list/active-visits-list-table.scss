@@ -147,4 +147,25 @@
   text-align: center;
   border: 1px solid $ui-03;
 }
+.searchContainer {
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  margin-top: $spacing-05;
+}
+
+.searchContainer > div {
+  align-self: center;
+  justify-self: end;
+  margin-right: 0;
+}
+
+.searchOverrides {
+  width: 100%;
+  max-width: 250px;
+  border: 0px !important;
+  margin-right: 1.5rem;
+  height: 32px;
+  color:$text-03 ;
+  font-size: 14px;
+}
 
