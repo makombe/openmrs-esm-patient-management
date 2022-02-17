@@ -144,3 +144,17 @@
   }
 }
 
+.searchContainer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.searchOverrides {
+  @include carbon--type-style('body-short-01');
+  max-width: 250px;
+  border: 0px !important;
+  margin-right: 1rem;
+  height: 32px;
+  color:$text-03;
+}
+

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Button,
   ContentSwitcher,
@@ -7,6 +7,7 @@ import {
   DataTableSkeleton,
   OverflowMenu,
   OverflowMenuItem,
+  Search,
   Switch,
   Table,
   TableBody,
@@ -36,7 +37,9 @@ const ActiveVisitsListTable: React.FC = () => {
   const { t } = useTranslation();
   const { activeVisits, isError, isLoading, isValidating } = useActiveVisits();
   const [contentSwitcherValue, setContentSwitcherValue] = useState(0);
+  const [searchString, setSearchString] = useState('');
   const [tableSize, setTableSize] = useState<DataTableSize>('sm');
+
   const isDesktop = useLayoutType() === 'desktop';
 
   useEffect(() => {
@@ -83,8 +86,7 @@ const ActiveVisitsListTable: React.FC = () => {
         return 'gray';
     }
   };
-
-  const tableRows = useMemo(() => {
+  let tableRows = useMemo(() => {
     return activeVisits?.map((visit) => ({
       ...visit,
       priority: {
@@ -100,6 +102,24 @@ const ActiveVisitsListTable: React.FC = () => {
       },
     }));
   }, [activeVisits]);
+
+  tableRows = useMemo(() => {
+    if (searchString && searchString.trim() !== '') {
+      const search = searchString.toLowerCase();
+      return tableRows.filter((visitRow) =>
+        Object.keys(visitRow).some((header) => {
+          if (header === 'waitTime') {
+            return false;
+          }
+          return `${visitRow[header]}`.toLowerCase().includes(search);
+        }),
+      );
+    } else {
+      return tableRows;
+    }
+  }, [searchString, tableRows]);
+
+  const handleSearch = useCallback((e) => setSearchString(e.target?.value), []);
 
   if (isLoading) {
     return <DataTableSkeleton role="progressbar" />;
@@ -124,6 +144,16 @@ const ActiveVisitsListTable: React.FC = () => {
               iconDescription={t('addPatientList', 'Add patient to list')}>
               {t('addPatientList', 'Add patient to list')}
             </Button>
+          </div>
+          <div className={styles.searchContainer}>
+            <Search
+              placeholder={t('searchList', 'search this list')}
+              labelText=""
+              className={styles.searchOverrides}
+              light
+              size={isDesktop ? 'sm' : 'xl'}
+              onChange={handleSearch}
+            />
           </div>
           <DataTable
             rows={tableRows}
