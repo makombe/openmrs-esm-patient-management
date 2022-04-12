@@ -31,7 +31,13 @@ import {
 import Add16 from '@carbon/icons-react/es/add/16';
 import Group16 from '@carbon/icons-react/es/group/16';
 import InProgress16 from '@carbon/icons-react/es/in-progress/16';
-import { useLayoutType, ConfigurableLink } from '@openmrs/esm-framework';
+import {
+  useLayoutType,
+  ConfigurableLink,
+  createErrorHandler,
+  showToast,
+  showNotification,
+} from '@openmrs/esm-framework';
 import {
   useVisitQueueEntries,
   useServices,
@@ -39,6 +45,8 @@ import {
   QueueStatus,
   MappedVisitQueueEntry,
   MappedQueuePriority,
+  QueueEntry,
+  updatePatientStatus,
 } from './active-visits-table.resource';
 import PatientSearch from '../patient-search/patient-search.component';
 import PastVisit from '../past-visit/past-visit.component';
@@ -99,6 +107,9 @@ function ActiveVisitsTable() {
   const [filteredRows, setFilteredRows] = useState<Array<MappedVisitQueueEntry>>([]);
   const [filter, setFilter] = useState('');
   const [showOverlay, setShowOverlay] = useState(false);
+  const [queueEntryStatus, setqueueEntryStatus] = useState<QueueEntry>();
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+
   const isDesktop = useLayoutType() === 'desktop';
 
   useEffect(() => {
@@ -228,6 +239,38 @@ function ActiveVisitsTable() {
         return ('' + cellsById[id].value).toLowerCase().includes(inputValue.toLowerCase());
       }),
     );
+  };
+
+  const handleQueueEntryStatusChange = ({ selectedItem }) => {
+    setIsSubmitting(true);
+    const ac = new AbortController();
+    const endAT = new Date();
+    updatePatientStatus(selectedItem.visitUuid, ac, queueEntryStatus, selectedItem.entryUuid, endAT)
+      .then((response) => {
+        if (response.status === 201) {
+          showToast({
+            critical: true,
+            kind: 'success',
+            title: t('PatientStatus', 'Patient status saved'),
+            description: t('PatientStatusSaved', 'Patient status updated'),
+          });
+        }
+      })
+      .catch((err) => {
+        createErrorHandler();
+
+        showNotification({
+          title: t('patientStatusSaveError', 'Error saving patient status'),
+          kind: 'error',
+          critical: true,
+          description: err?.message,
+        });
+      })
+      .finally(() => {
+        ac.abort();
+      });
+
+    //setqueueEntryStatus(selectedItem);
   };
 
   if (isLoading) {

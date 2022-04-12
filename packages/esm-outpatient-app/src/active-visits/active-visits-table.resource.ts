@@ -155,3 +155,48 @@ export function useVisitQueueEntries(): UseVisitQueueEntries {
     isValidating,
   };
 }
+
+export interface QueueEntry {
+  startedAt: Date;
+  status: string;
+  priority: string;
+  patient: string;
+  priorityComment: string;
+  queue: string;
+}
+
+export async function updatePatientStatus(
+  visitUuid: string,
+  abortController: AbortController,
+  queueEntry: QueueEntry,
+  entryUuid: string,
+  endedAt: Date,
+) {
+  //  endPatientStatus(queueEntry.queue, abortController, entryUuid, endedAt);
+  await Promise.all([endPatientStatus(queueEntry.queue, abortController, entryUuid, endedAt)]);
+
+  return openmrsFetch(`/ws/rest/v1/visit-queue-entry`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    signal: abortController.signal,
+    body: {
+      visit: visitUuid,
+      queueEntry: queueEntry,
+    },
+  });
+}
+
+async function endPatientStatus(queueUuid: string, abortController: AbortController, entryUuid: string, endedAt: Date) {
+  await openmrsFetch(`/ws/rest/v1/queue/${queueUuid}/${entryUuid}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    signal: abortController.signal,
+    body: {
+      endedAt: endedAt,
+    },
+  });
+}

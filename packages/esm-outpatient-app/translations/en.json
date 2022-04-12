@@ -24,6 +24,8 @@
   "female": "Female",
   "fields": "of the following fields",
   "firstName": "First name",
+  "futureScheduledVisits": " {count, plural, one{{count} visit} other{{count} visits}} scheduled for dates in the future",
+  "futureScheduledVisits_plural": "",
   "hivCare": "HIV care",
   "lastName": "Last name",
   "lastVisit": "Last Visit",
@@ -46,6 +48,9 @@
   "outpatients": "Outpatients",
   "patientList": "Patient list",
   "patients": "Patients",
+  "PatientStatus": "Patient status saved",
+  "PatientStatusSaved": "Patient status updated",
+  "patientStatusSaveError": "Error saving patient status",
   "personalDetails": "Personal Details",
   "phoneNumber": "Phone number",
   "postCode": "Post code",
@@ -53,6 +58,8 @@
   "primaryHelperText": "Search for a patient",
   "priority": "Priority",
   "provider": "Provider",
+  "recentScheduledVisits": "{count, plural, one{{count} visit} other{{count} visits}} scheduled for +/- 7 days",
+  "recentScheduledVisits_plural": "",
   "scheduledAppointments": "Scheduled appts. today",
   "search": "Search",
   "searchboxPlaceholder": "Search for a patient name or ID number",
@@ -67,7 +74,5 @@
   "view": "View",
   "vitals": "Vitals",
   "waitingFor": "Waiting for:",
-  "waitTime": "Wait time (mins)",
-  "futureScheduledVisits": " {count, plural, one{{count} visit} other{{count} visits}} scheduled for dates in the future",
-  "recentScheduledVisits": "{count, plural, one{{count} visit} other{{count} visits}} scheduled for +/- 7 days"
+  "waitTime": "Wait time (mins)"
 }
