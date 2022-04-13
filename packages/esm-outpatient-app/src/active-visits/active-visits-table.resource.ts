@@ -23,6 +23,7 @@ interface VisitQueueEntry {
   };
   priority: {
     display: QueuePriority;
+    uuid: string;
   };
   priorityComment: string | null;
   providerWaitingFor: null;
@@ -38,6 +39,7 @@ interface VisitQueueEntry {
   startedAt: string;
   status: {
     display: QueueStatus;
+    uuid: string;
   };
   uuid: string;
   visit: Visit;
@@ -46,6 +48,7 @@ interface VisitQueueEntry {
 export interface MappedVisitQueueEntry {
   id: string;
   encounters: Array<MappedEncounter>;
+  endedAt: string;
   name: string;
   patientUuid: string;
   priority: MappedQueuePriority;
@@ -56,6 +59,9 @@ export interface MappedVisitQueueEntry {
   visitType: string;
   visitUuid: string;
   waitTime: string;
+  queueUuid: string;
+  priorityUUid: string;
+  statusUuid: string;
 }
 
 interface UseVisitQueueEntries {
@@ -155,6 +161,7 @@ export function useVisitQueueEntries(): UseVisitQueueEntries {
   const mapVisitQueueEntryProperties = (visitQueueEntry: VisitQueueEntry): MappedVisitQueueEntry => ({
     id: visitQueueEntry.queueEntry.uuid,
     encounters: visitQueueEntry.visit?.encounters?.map(mapEncounterProperties),
+    endedAt: visitQueueEntry.queueEntry.endedAt,
     name: visitQueueEntry.queueEntry.display,
     patientUuid: visitQueueEntry.queueEntry.patient.uuid,
     // Map `Urgent` to `Priority` because it's easier to distinguish between tags named
@@ -172,14 +179,64 @@ export function useVisitQueueEntries(): UseVisitQueueEntries {
     visitStartDateTime: visitQueueEntry.visit?.visitStartDateTime,
     visitType: visitQueueEntry.visit?.visitType?.display,
     visitUuid: visitQueueEntry.visit?.uuid,
+    queueUuid: visitQueueEntry?.queueEntry?.queue?.uuid,
+    priorityUUid: visitQueueEntry.queueEntry?.priority?.uuid,
+    statusUuid: visitQueueEntry.queueEntry?.status?.uuid,
   });
 
   const mappedVisitQueueEntries = data?.data?.results?.map(mapVisitQueueEntryProperties);
+  console.log('mappedVisitQueueEntries: ', mappedVisitQueueEntries);
 
   return {
-    visitQueueEntries: mappedVisitQueueEntries ? mappedVisitQueueEntries : null,
+    visitQueueEntries: mappedVisitQueueEntries ? mappedVisitQueueEntries.filter((entry) => !entry.endedAt) : null,
     isLoading: !data && !error,
     isError: error,
     isValidating,
   };
+}
+
+export interface QueueEntry {
+  startedAt: Date;
+  status: string;
+  priority: string;
+  patient: string;
+  priorityComment: string;
+  queue: string;
+}
+
+export async function updatePatientStatus(
+  visitUuid: string,
+  abortController: AbortController,
+  queueEntry: QueueEntry,
+  entryUuid: string,
+  endedAt: Date,
+) {
+  console.log('queueEntry', queueEntry);
+  //  endPatientStatus(queueEntry.queue, abortController, entryUuid, endedAt);
+  await Promise.all([endPatientStatus(queueEntry?.queue, abortController, entryUuid, endedAt)]);
+
+  return openmrsFetch(`/ws/rest/v1/visit-queue-entry`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    signal: abortController.signal,
+    body: {
+      visit: visitUuid,
+      queueEntry: queueEntry,
+    },
+  });
+}
+
+async function endPatientStatus(queueUuid: string, abortController: AbortController, entryUuid: string, endedAt: Date) {
+  await openmrsFetch(`/ws/rest/v1/queue/${queueUuid}/entry/${entryUuid}`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    signal: abortController.signal,
+    body: {
+      endedAt: endedAt,
+    },
+  });
 }

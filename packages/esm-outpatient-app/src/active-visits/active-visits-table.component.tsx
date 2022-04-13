@@ -32,7 +32,13 @@ import Checkmark16 from '@carbon/icons-react/es/checkmark/16';
 import Group16 from '@carbon/icons-react/es/group/16';
 import InProgress16 from '@carbon/icons-react/es/in-progress/16';
 import uniqBy from 'lodash-es/uniqBy';
-import { useLayoutType, ConfigurableLink } from '@openmrs/esm-framework';
+import {
+  useLayoutType,
+  ConfigurableLink,
+  createErrorHandler,
+  showToast,
+  showNotification,
+} from '@openmrs/esm-framework';
 import {
   useVisitQueueEntries,
   useServices,
@@ -41,6 +47,8 @@ import {
   MappedVisitQueueEntry,
   MappedQueuePriority,
   useStatuses,
+  QueueEntry,
+  updatePatientStatus,
 } from './active-visits-table.resource';
 import PatientSearch from '../patient-search/patient-search.component';
 import PastVisit from '../past-visit/past-visit.component';
@@ -103,6 +111,7 @@ function ActiveVisitsTable() {
   const { visitQueueEntries, isLoading } = useVisitQueueEntries();
   const [filteredRows, setFilteredRows] = useState<Array<MappedVisitQueueEntry>>([]);
   const [filter, setFilter] = useState('');
+  const [queueEntryStatus, setQueueEntryStatus] = useState<QueueEntry>();
   const [showOverlay, setShowOverlay] = useState(false);
   const isDesktop = useLayoutType() === 'desktop';
 
@@ -230,6 +239,7 @@ function ActiveVisitsTable() {
               label=""
               initialSelectedItem={entry}
               items={mapStatusesAndServices(statuses, services)}
+              onChange={(props) => handleQueueEntryStatusChange(entry)}
               itemToString={(entry: any) => entry.value ?? buildStatusString(entry.status, entry.service)}
               itemToElement={(entry) => {
                 return (
@@ -274,6 +284,48 @@ function ActiveVisitsTable() {
         return ('' + cellsById[id].value).toLowerCase().includes(inputValue.toLowerCase());
       }),
     );
+  };
+
+  const handleQueueEntryStatusChange = (selectedQueueEntry) => {
+    const updateQueueEntryStatus = {
+      ...queueEntryStatus,
+      // patient: selectedQueueEntry?.patientUuid,
+      priority: selectedQueueEntry?.priorityUUid,
+      status: selectedQueueEntry?.statusUuid,
+      queue: selectedQueueEntry?.queueUuid,
+      startedAt: new Date(),
+    };
+    console.log('selected====', selectedQueueEntry);
+    // console.log('selectedQueueEntry.visitUuid', selectedQueueEntry.visitUuid);
+    // console.log('selectedQueueEntry', queueEntryStatus);
+    // console.log('priorityUUid', selectedQueueEntry.priorityUUid);
+
+    //  setIsSubmitting(true);
+    const ac = new AbortController();
+    const endAT = new Date();
+    updatePatientStatus(selectedQueueEntry.visitUuid, ac, updateQueueEntryStatus, selectedQueueEntry.id, endAT)
+      .then((response) => {
+        if (response.status === 201) {
+          showToast({
+            critical: true,
+            kind: 'success',
+            title: t('PatientStatus', 'Patient status saved'),
+            description: t('PatientStatusSaved', 'Patient status updated'),
+          });
+        }
+      })
+      .catch((err) => {
+        createErrorHandler();
+        showNotification({
+          title: t('patientStatusSaveError', 'Error saving patient status'),
+          kind: 'error',
+          critical: true,
+          description: err?.message,
+        });
+      })
+      .finally(() => {
+        ac.abort();
+      });
   };
 
   if (isLoading) {
@@ -423,3 +475,20 @@ function ActiveVisitsTable() {
 }
 
 export default ActiveVisitsTable;
+
+interface SelecetedQueueEntry {
+  id: string;
+  encounters?: Array<any>;
+  name: string;
+  patientUuid: string;
+  priority: string;
+  priorityComment: string;
+  service: string;
+  status: string;
+  waitTime: string;
+  visitType: string;
+  visitUuid: string;
+  queueUuid: string;
+  priorityUUid: string;
+  statusUuid: string;
+}
