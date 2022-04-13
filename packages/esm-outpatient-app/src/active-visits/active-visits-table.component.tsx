@@ -4,7 +4,6 @@ import {
   Button,
   DataTable,
   DataTableHeader,
-  DataTableSize,
   DataTableSkeleton,
   Dropdown,
   OverflowMenu,
@@ -29,8 +28,10 @@ import {
   TooltipDefinition,
 } from 'carbon-components-react';
 import Add16 from '@carbon/icons-react/es/add/16';
+import Checkmark16 from '@carbon/icons-react/es/checkmark/16';
 import Group16 from '@carbon/icons-react/es/group/16';
 import InProgress16 from '@carbon/icons-react/es/in-progress/16';
+import uniqBy from 'lodash-es/uniqBy';
 import { useLayoutType, ConfigurableLink } from '@openmrs/esm-framework';
 import {
   useVisitQueueEntries,
@@ -39,6 +40,7 @@ import {
   QueueStatus,
   MappedVisitQueueEntry,
   MappedQueuePriority,
+  useStatuses,
 } from './active-visits-table.resource';
 import PatientSearch from '../patient-search/patient-search.component';
 import PastVisit from '../past-visit/past-visit.component';
@@ -87,6 +89,8 @@ function StatusIcon({ status }) {
       return <InProgress16 />;
     case 'In Service':
       return <Group16 />;
+    case 'Finished Service':
+      return <Checkmark16 />;
     default:
       return null;
   }
@@ -94,6 +98,7 @@ function StatusIcon({ status }) {
 
 function ActiveVisitsTable() {
   const { t } = useTranslation();
+  const { statuses } = useStatuses();
   const { services } = useServices();
   const { visitQueueEntries, isLoading } = useVisitQueueEntries();
   const [filteredRows, setFilteredRows] = useState<Array<MappedVisitQueueEntry>>([]);
@@ -149,15 +154,30 @@ function ActiveVisitsTable() {
     if (!status || !service) {
       return '';
     }
-
     if (status === 'Waiting') {
       return `${status} for ${service}`;
     } else if (status === 'In Service') {
       return `Attending ${service}`;
+    } else if (status === 'Finished Service') {
+      return `Finished ${service}`;
     }
   };
 
   const tableRows = useMemo(() => {
+    const mapStatusesAndServices = (statuses, services) => {
+      const result = [];
+      statuses.forEach((status, index) => {
+        services.forEach((service) =>
+          result.push({
+            id: index,
+            status: status,
+            value: buildStatusString(status, service),
+          }),
+        );
+      });
+      return result.sort((a, b) => (a.value > b.value ? 1 : -1));
+    };
+
     return (filteredRows.length ? filteredRows : visitQueueEntries)?.map((entry) => ({
       ...entry,
       name: {
@@ -167,39 +187,65 @@ function ActiveVisitsTable() {
       },
       priority: {
         content: (
-          <>
-            {entry?.priorityComment ? (
-              <TooltipDefinition
-                className={styles.tooltip}
-                align="start"
-                direction="bottom"
-                tooltipText={entry.priorityComment}>
-                <Tag
-                  className={entry.priority === 'Priority' ? styles.priorityTag : styles.tag}
-                  type={getTagType(entry.priority as string)}>
-                  {entry.priority}
-                </Tag>
-              </TooltipDefinition>
-            ) : (
-              <Tag
-                className={entry.priority === 'Priority' ? styles.priorityTag : styles.tag}
-                type={getTagType(entry.priority as string)}>
-                {entry.priority}
-              </Tag>
-            )}
-          </>
+          <div className={styles.dropdown}>
+            <Dropdown
+              className={`${styles.prioritySelect}`}
+              id="prioritySelect"
+              label=""
+              initialSelectedItem={entry}
+              items={uniqBy(visitQueueEntries, 'priority')}
+              itemToString={(entry: any) => entry.priority}
+              itemToElement={(entry) => {
+                return entry?.priorityComment ? (
+                  <TooltipDefinition
+                    className={styles.tooltip}
+                    align="start"
+                    direction="bottom"
+                    tooltipText={entry.priorityComment}>
+                    <Tag
+                      className={entry.priority === 'Priority' ? styles.priorityTag : styles.tag}
+                      type={getTagType(entry.priority as string)}>
+                      {entry?.priority}
+                    </Tag>
+                  </TooltipDefinition>
+                ) : (
+                  <Tag
+                    className={entry.priority === 'Priority' ? styles.priorityTag : styles.tag}
+                    type={getTagType(entry.priority as string)}>
+                    {entry.priority}
+                  </Tag>
+                );
+              }}
+              type="inline"
+            />
+          </div>
         ),
       },
       status: {
         content: (
-          <span className={styles.statusContainer}>
-            <StatusIcon status={entry.status} />
-            <span>{buildStatusString(entry.status, entry.service)}</span>
-          </span>
+          <div className={styles.dropdown}>
+            <Dropdown
+              className={styles.statusSelect}
+              id="statusSelect"
+              label=""
+              initialSelectedItem={entry}
+              items={mapStatusesAndServices(statuses, services)}
+              itemToString={(entry: any) => entry.value ?? buildStatusString(entry.status, entry.service)}
+              itemToElement={(entry) => {
+                return (
+                  <span className={styles.statusContainer}>
+                    <StatusIcon status={entry.status} />
+                    <span>{entry.value}</span>
+                  </span>
+                );
+              }}
+              type="inline"
+            />
+          </div>
         ),
       },
     }));
-  }, [filteredRows, visitQueueEntries]);
+  }, [filteredRows, services, statuses, visitQueueEntries]);
 
   const handleServiceChange = ({ selectedItem }) => {
     setFilter(selectedItem);
@@ -236,7 +282,7 @@ function ActiveVisitsTable() {
 
   if (visitQueueEntries?.length) {
     return (
-      <div className={styles.container} data-floating-menu-container>
+      <div className={styles.container}>
         <div className={styles.headerContainer}>
           <span className={styles.heading}>{t('activeVisits', 'Active visits')}</span>
           <Button
@@ -249,6 +295,7 @@ function ActiveVisitsTable() {
           </Button>
         </div>
         <DataTable
+          data-floating-menu-container
           filterRows={handleFilter}
           headers={tableHeaders}
           overflowMenuOnHover={isDesktop ? true : false}

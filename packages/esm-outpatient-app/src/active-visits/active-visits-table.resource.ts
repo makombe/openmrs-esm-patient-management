@@ -93,6 +93,20 @@ interface MappedEncounter extends Omit<Encounter, 'encounterType' | 'provider'> 
   provider: string;
 }
 
+export function usePriorities() {
+  const config = useConfig();
+  const {
+    concepts: { priorityConceptSetUuid },
+  } = config;
+
+  const apiUrl = `/ws/rest/v1/concept/${priorityConceptSetUuid}`;
+  const { data } = useSWRImmutable<FetchResponse>(apiUrl, openmrsFetch);
+
+  return {
+    priorities: data ? data?.data?.setMembers?.map((setMember) => setMember?.display) : [],
+  };
+}
+
 export function useServices() {
   const config = useConfig();
   const {
@@ -104,6 +118,20 @@ export function useServices() {
 
   return {
     services: data ? data?.data?.setMembers?.map((setMember) => setMember?.display) : [],
+  };
+}
+
+export function useStatuses() {
+  const config = useConfig();
+  const {
+    concepts: { statusConceptSetUuid },
+  } = config;
+
+  const apiUrl = `/ws/rest/v1/concept/${statusConceptSetUuid}`;
+  const { data } = useSWRImmutable<FetchResponse>(apiUrl, openmrsFetch);
+
+  return {
+    statuses: data ? data?.data?.setMembers?.map((setMember) => setMember?.display) : [],
   };
 }
 
