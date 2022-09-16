@@ -143,7 +143,6 @@ export function getFormValuesFromFhirPatient(patient: fhir.Patient) {
 export function getAddressFieldValuesFromFhirPatient(patient: fhir.Patient) {
   const result = {};
   const address = patient.address?.[0];
-
   if (address) {
     for (const key of Object.keys(address)) {
       switch (key) {
