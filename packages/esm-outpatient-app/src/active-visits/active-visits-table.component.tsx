@@ -63,6 +63,7 @@ import {
   updateSelectedServiceUuid,
   useSelectedServiceName,
   useSelectedServiceUuid,
+  useSelectedQueueLocationUuid,
 } from '../helpers/helpers';
 
 type FilterProps = {
@@ -169,7 +170,8 @@ function ActiveVisitsTable() {
   const [userLocation, setUserLocation] = useState('');
   const session = useSession();
   const locations = useLocations();
-  const { services } = useServices(userLocation);
+  const currentQueueLocation = useSelectedQueueLocationUuid();
+  const { services } = useServices(currentQueueLocation);
   const currentServiceName = useSelectedServiceName();
   const { visitQueueEntries, isLoading } = useVisitQueueEntries(currentServiceName);
   const [showOverlay, setShowOverlay] = useState(false);

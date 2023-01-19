@@ -11,8 +11,10 @@ import {
   updateSelectedServiceUuid,
   useSelectedServiceName,
   useSelectedServiceUuid,
+  useSelectedQueueLocationUuid,
 } from '../helpers/helpers';
 import { useVisitQueueEntries } from '../active-visits/active-visits-table.resource';
+import { useQueueLocations } from '../patient-search/hooks/useQueueLocations';
 
 export interface Service {
   uuid: string;
@@ -27,7 +29,10 @@ function ClinicMetrics() {
   const { metrics, isLoading } = useMetrics();
   const { totalScheduledAppointments } = useAppointmentMetrics();
   const [userLocation, setUserLocation] = useState('');
-  const { allServices } = useServices(userLocation);
+  const [queueLocation, setQueueLocation] = useState('');
+  const { queueLocations } = useQueueLocations();
+  const currentQueueLocation = useSelectedQueueLocationUuid();
+  const { allServices } = useServices(currentQueueLocation);
   const currentServiceName = useSelectedServiceName();
   const currentServiceUuid = useSelectedServiceUuid();
   const { serviceCount } = useServiceMetricsCount(currentServiceName);
@@ -35,12 +40,15 @@ function ClinicMetrics() {
   const { visitQueueEntriesCount } = useVisitQueueEntries(currentServiceName);
 
   useEffect(() => {
-    if (!userLocation && session?.sessionLocation !== null) {
-      setUserLocation(session?.sessionLocation?.uuid);
-    } else if (!userLocation && locations) {
-      setUserLocation([...locations].shift()?.uuid);
-    }
-  }, [session, locations, userLocation]);
+    setQueueLocation([...queueLocations].shift()?.id);
+    // if (!userLocation && session?.sessionLocation !== null) {
+    //   setUserLocation(session?.sessionLocation?.uuid);
+    // } else if (!userLocation && locations) {
+    //   setUserLocation([...locations].shift()?.uuid);
+    // } else if (!userLocation && queueLocations) {
+    //   setQueueLocation([...queueLocations].shift()?.id);
+    // }
+  }, [session, locations, userLocation, queueLocations, queueLocation]);
 
   useEffect(() => {
     if (currentServiceName && currentServiceUuid) {
@@ -49,6 +57,7 @@ function ClinicMetrics() {
       setInitialSelectItem(true);
     }
   }, [allServices, currentServiceName, currentServiceUuid, t]);
+  console.log('allServices', allServices);
 
   const handleServiceChange = ({ selectedItem }) => {
     updateSelectedServiceUuid(selectedItem.uuid);

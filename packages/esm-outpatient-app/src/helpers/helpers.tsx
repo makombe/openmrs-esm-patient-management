@@ -14,6 +14,8 @@ export const getServiceCountByAppointmentType = (
 
 const initialServiceNameState = { serviceName: '' };
 const initialServiceUuidState = { serviceUuid: '' };
+const initialQueueLocationNameState = { queueLocationName: '' };
+const initialQueueLocationUuidState = { queueLocationUuid: '' };
 
 export function getSelectedServiceName() {
   return getGlobalStore<{ serviceName: string }>('queueSelectedServiceName', initialServiceNameState);
@@ -21,6 +23,14 @@ export function getSelectedServiceName() {
 
 export function getSelectedServiceUuid() {
   return getGlobalStore<{ serviceUuid: string }>('queueSelectedServiceUuid', initialServiceUuidState);
+}
+
+export function getSelectedQueueLocationName() {
+  return getGlobalStore<{ queueLocationName: string }>('queueLocationNameSelected', initialQueueLocationNameState);
+}
+
+export function getSelectedQueueLocationUuid() {
+  return getGlobalStore<{ queueLocationUuid: string }>('queueLocationUuidSelected', initialQueueLocationUuidState);
 }
 
 export const updateSelectedServiceName = (currentServiceName: string) => {
@@ -31,6 +41,16 @@ export const updateSelectedServiceName = (currentServiceName: string) => {
 export const updateSelectedServiceUuid = (currentServiceUuid: string) => {
   const store = getSelectedServiceUuid();
   store.setState({ serviceUuid: currentServiceUuid });
+};
+
+export const updateSelectedQueueLocationName = (currentLocationName: string) => {
+  const store = getSelectedQueueLocationName();
+  store.setState({ queueLocationName: currentLocationName });
+};
+
+export const updateSelectedQueueLocationUuid = (currentLocationUuid: string) => {
+  const store = getSelectedQueueLocationUuid();
+  store.setState({ queueLocationUuid: currentLocationUuid });
 };
 
 export const useSelectedServiceName = () => {
@@ -49,4 +69,26 @@ export const useSelectedServiceUuid = () => {
     getSelectedServiceUuid().subscribe(({ serviceUuid }) => setCurrentServiceUuid(serviceUuid));
   }, []);
   return currentServiceUuid;
+};
+
+export const useSelectedQueueLocationName = () => {
+  const [currentQueueLocationName, setCurrentQueueLocationName] = useState(
+    initialQueueLocationNameState.queueLocationName,
+  );
+
+  useEffect(() => {
+    getSelectedQueueLocationName().subscribe(({ queueLocationName }) => setCurrentQueueLocationName(queueLocationName));
+  }, []);
+  return currentQueueLocationName;
+};
+
+export const useSelectedQueueLocationUuid = () => {
+  const [currentQueueLocationUuid, setCurrentQueueLocationUuid] = useState(
+    initialQueueLocationUuidState.queueLocationUuid,
+  );
+
+  useEffect(() => {
+    getSelectedQueueLocationUuid().subscribe(({ queueLocationUuid }) => setCurrentQueueLocationUuid(queueLocationUuid));
+  }, []);
+  return currentQueueLocationUuid;
 };
