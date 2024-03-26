@@ -89,6 +89,11 @@
     {
       "name": "edit-queue-entry-modal",
       "component": "editQueueEntryModal"
-    } 
+    },
+    {
+      "name": "queue-visit-header-widget",
+      "component": "queueVisitHeader",
+      "slot": "visit-header-slot"
+    }
   ]
 }

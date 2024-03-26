@@ -17,6 +17,7 @@ import homeDashboardComponent from './home.component';
 import patientInfoBannerSlotComponent from './patient-info/patient-info.component';
 import pastVisitSummaryComponent from './past-visit/past-visit.component';
 import addQueueEntryComponent from './patient-search/visit-form-queue-fields/visit-form-queue-fields.component';
+import queueVisitHeaderComponent from './patient-chart/edit-queue-entry-visit-header.component';
 
 export const importTranslation = require.context('../translations', false, /.json$/, 'lazy');
 
@@ -92,6 +93,7 @@ export const transitionQueueEntryStatusModal = getAsyncLifecycle(
 );
 
 export const pastVisitSummary = getSyncLifecycle(pastVisitSummaryComponent, options);
+export const queueVisitHeader = getSyncLifecycle(queueVisitHeaderComponent, options);
 
 export const addProviderToRoomModal = getAsyncLifecycle(
   () => import('./add-provider-queue-room/add-provider-queue-room.component'),

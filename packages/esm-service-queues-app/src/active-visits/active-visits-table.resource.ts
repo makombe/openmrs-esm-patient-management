@@ -18,13 +18,11 @@ import { useQueueLocations } from '../patient-search/hooks/useQueueLocations';
 import isToday from 'dayjs/plugin/isToday';
 
 dayjs.extend(isToday);
-
 export interface VisitQueueEntry {
   queueEntry: QueueEntry;
   uuid: string;
   visit: Visit;
 }
-
 export interface MappedVisitQueueEntry {
   id: string;
   encounters: Array<MappedEncounter>;
@@ -45,7 +43,7 @@ export interface MappedVisitQueueEntry {
   queueEntryUuid: string;
   queueLocation: string;
   sortWeight: number;
-  visitQueueNumber: string;
+  visitQueueNumber?: string;
   identifiers: Array<Identifer>;
   queueComingFrom: string;
 }
@@ -85,6 +83,13 @@ interface Encounter {
 interface MappedEncounter extends Omit<Encounter, 'encounterType' | 'provider'> {
   encounterType: string;
   provider: string;
+}
+interface UseVisitQueueEntry {
+  queueEntry: MappedVisitQueueEntry | null;
+  isLoading: boolean;
+  isError: Error;
+  isValidating?: boolean;
+  mutate: () => void;
 }
 
 const mapEncounterProperties = (encounter: Encounter): MappedEncounter => ({
@@ -326,4 +331,50 @@ export function serveQueueEntry(servicePointName: string, ticketNumber: string, 
       status,
     },
   });
+}
+
+export function useVisitQueueEntry(patientUuid, visitUuid): UseVisitQueueEntry {
+  const apiUrl = `${restBaseUrl}/visit-queue-entry?v=full&patient=${patientUuid}`;
+  const { data, error, isLoading, isValidating, mutate } = useSWR<{ data: { results: Array<VisitQueueEntry> } }, Error>(
+    apiUrl,
+    openmrsFetch,
+  );
+  const mapVisitQueueEntryProperties = (visitQueueEntry: VisitQueueEntry): MappedVisitQueueEntry => ({
+    id: visitQueueEntry.uuid,
+    encounters: visitQueueEntry.visit?.encounters?.map(mapEncounterProperties),
+    name: visitQueueEntry.queueEntry.display,
+    patientUuid: visitQueueEntry.queueEntry.patient.uuid,
+    patientAge: visitQueueEntry.queueEntry.patient.person?.age + '',
+    patientDob: visitQueueEntry.queueEntry?.patient?.person?.birthdate
+      ? formatDate(parseDate(visitQueueEntry.queueEntry.patient.person.birthdate), { time: false })
+      : '--',
+    queue: visitQueueEntry.queueEntry.queue,
+    priority: visitQueueEntry.queueEntry.priority,
+    priorityComment: visitQueueEntry.queueEntry.priorityComment,
+    status: visitQueueEntry.queueEntry.status,
+    startedAt: dayjs(visitQueueEntry.queueEntry.startedAt).toDate(),
+    endedAt: visitQueueEntry.queueEntry.endedAt ? dayjs(visitQueueEntry.queueEntry.endedAt).toDate() : null,
+    visitType: visitQueueEntry.queueEntry.visit?.visitType?.display,
+    queueLocation: (visitQueueEntry.queueEntry?.queue as any)?.location?.uuid,
+    visitTypeUuid: visitQueueEntry.queueEntry.visit?.visitType?.uuid,
+    visitUuid: visitQueueEntry.queueEntry.visit?.uuid,
+    queueUuid: visitQueueEntry.queueEntry.queue.uuid,
+    queueEntryUuid: visitQueueEntry.queueEntry.uuid,
+    sortWeight: visitQueueEntry.queueEntry.sortWeight,
+    identifiers: visitQueueEntry.queueEntry.patient?.identifiers as Identifer[],
+    queueComingFrom: visitQueueEntry.queueEntry?.queueComingFrom?.name,
+  });
+
+  const mappedVisitQueueEntry =
+    data?.data?.results
+      ?.map(mapVisitQueueEntryProperties)
+      .filter((visitQueueEntry) => visitUuid !== undefined && visitUuid === visitQueueEntry.visitUuid)
+      .shift() ?? null;
+  return {
+    queueEntry: mappedVisitQueueEntry,
+    isLoading,
+    isError: error,
+    isValidating,
+    mutate,
+  };
 }
