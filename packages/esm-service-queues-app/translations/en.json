@@ -153,6 +153,8 @@
   "queues": "Queues",
   "queuesClearedSuccessfully": "Queues cleared successfully",
   "queueScreen": "Queue screen",
+  "queueScreenError": "Queue screen error",
+  "queueService": "Queue service",
   "queueServiceCreated": "Queue service created",
   "queueServiceCreatedSuccessfully": "Queue service created successfully",
   "queueStatus": "Queue status",
